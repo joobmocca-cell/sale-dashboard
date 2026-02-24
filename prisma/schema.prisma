@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  RM
+  AM
+  BM
+  STAFF
+}
+
+enum ItemType {
+  INVENTORY
+  NON_INVENTORY
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  role            Role
+  canCreateKPI    Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  employeeCode    String?   @unique
+  branchCode      String?
+  branch          Branch?   @relation(fields: [branchCode], references: [code])
+  
+  managedRegions  String[]
+  managedAreas    String[]
+  managedBranches String[]
+  managedAMs      String[]
+  
+  customKPIs      CustomKPI[]
+  sessions        Session[]
+  
+  @@index([email])
+  @@index([employeeCode])
+  @@index([branchCode])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+model Branch {
+  code          String   @id
+  name          String
+  unit          String
+  rm            String
+  am            String
+  salesChannel  String
+  bm            String
+  contactNumber String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  users         User[]
+  sales         Sale[]
+  
+  @@index([rm])
+  @@index([am])
+  @@index([bm])
+}
+
+model Sale {
+  id              String   @id @default(cuid())
+  amount          Decimal  @db.Decimal(12, 2)
+  quantity        Int
+  branchCode      String
+  branch          Branch   @relation(fields: [branchCode], references: [code])
+  docDate         DateTime
+  category        String
+  subCategory     String
+  brand           String
+  model           String
+  employeeCode    String
+  employeeName    String
+  itemType        ItemType
+  createdAt       DateTime @default(now())
+  
+  @@index([branchCode])
+  @@index([employeeCode])
+  @@index([docDate])
+  @@index([category])
+  @@index([brand])
+  @@index([itemType])
+  @@index([docDate, branchCode])
+  @@index([docDate, employeeCode])
+}
+
+model DailySalesAggregate {
+  id            String   @id @default(cuid())
+  date          DateTime
+  branchCode    String
+  employeeCode  String
+  category      String
+  totalAmount   Decimal  @db.Decimal(12, 2)
+  totalQuantity Int
+  transCount    Int
+  createdAt     DateTime @default(now())
+  
+  @@unique([date, branchCode, employeeCode, category])
+  @@index([date])
+  @@index([branchCode])
+  @@index([employeeCode])
+}
+
+model MonthlySalesAggregate {
+  id            String   @id @default(cuid())
+  year          Int
+  month         Int
+  branchCode    String
+  employeeCode  String
+  category      String
+  totalAmount   Decimal  @db.Decimal(12, 2)
+  totalQuantity Int
+  transCount    Int
+  createdAt     DateTime @default(now())
+  
+  @@unique([year, month, branchCode, employeeCode, category])
+  @@index([year, month])
+  @@index([branchCode])
+  @@index([employeeCode])
+}
+
+model YearlySalesAggregate {
+  id            String   @id @default(cuid())
+  year          Int
+  branchCode    String
+  employeeCode  String
+  category      String
+  totalAmount   Decimal  @db.Decimal(12, 2)
+  totalQuantity Int
+  transCount    Int
+  createdAt     DateTime @default(now())
+  
+  @@unique([year, branchCode, employeeCode, category])
+  @@index([year])
+  @@index([branchCode])
+  @@index([employeeCode])
+}
+
+model CustomKPI {
+  id                String   @id @default(cuid())
+  name              String
+  createdBy         String
+  creator           User     @relation(fields: [createdBy], references: [id])
+  
+  numFilters        Json
+  numAggregation    String
+  
+  denFilters        Json
+  denAggregation    String
+  
+  calculation       String
+  displayFormat     String
+  benchmark         Decimal? @db.Decimal(12, 2)
+  
+  visibleToRoles    Role[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([createdBy])
+}
+
+model ColumnMapping {
+  id            String   @id @default(cuid())
+  name          String
+  fileType      String
+  mapping       Json
+  createdBy     String
+  createdAt     DateTime @default(now())
+  
+  @@index([fileType])
+  @@index([createdBy])
+}
+
+model ImportJob {
+  id              String    @id @default(cuid())
+  fileType        String
+  fileName        String
+  fileSize        Int
+  filePath        String
+  status          JobStatus
+  progress        Int       @default(0)
+  totalRows       Int?
+  processedRows   Int       @default(0)
+  successRows     Int       @default(0)
+  errorRows       Int       @default(0)
+  errorLog        String?   @db.Text
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  createdBy       String
+  
+  @@index([status])
+  @@index([createdBy])
+}
