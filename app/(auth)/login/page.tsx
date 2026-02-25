@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -18,7 +18,7 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", {
-        email,
+        username,
         password,
         redirect: false,
       })
@@ -57,18 +57,18 @@ export default function LoginPage() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                อีเมล
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Username
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="username"
+                name="username"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-                placeholder="admin@example.com"
+                placeholder="admin"
               />
             </div>
 
@@ -100,8 +100,8 @@ export default function LoginPage() {
 
         <div className="mt-4 text-center text-sm text-gray-600">
           <p>ทดสอบระบบด้วย:</p>
-          <p className="mt-1">Email: admin@example.com</p>
-          <p>Password: Admin123!</p>
+          <p className="mt-1">Username: admin</p>
+          <p>Password: 1234</p>
         </div>
       </div>
     </div>

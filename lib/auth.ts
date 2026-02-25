@@ -10,21 +10,21 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("กรุณากรอกอีเมลและรหัสผ่าน")
+        if (!credentials?.username || !credentials?.password) {
+          throw new Error("กรุณากรอก username และรหัสผ่าน")
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { username: credentials.username },
           include: { branch: true }
         })
 
         if (!user || !user.password) {
-          throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง")
+          throw new Error("username หรือรหัสผ่านไม่ถูกต้อง")
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -33,11 +33,12 @@ export const authOptions: NextAuthOptions = {
         )
 
         if (!isPasswordValid) {
-          throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง")
+          throw new Error("username หรือรหัสผ่านไม่ถูกต้อง")
         }
 
         return {
           id: user.id,
+          username: user.username,
           email: user.email,
           role: user.role,
           employeeCode: user.employeeCode,
@@ -62,6 +63,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.username = user.username
         token.role = user.role
         token.employeeCode = user.employeeCode
         token.branchCode = user.branchCode
@@ -76,6 +78,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.username = token.username as string
         session.user.role = token.role as string
         session.user.employeeCode = token.employeeCode as string | null
         session.user.branchCode = token.branchCode as string | null
