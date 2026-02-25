@@ -18,10 +18,19 @@ export const authOptions: NextAuthOptions = {
           throw new Error("กรุณากรอก username และรหัสผ่าน")
         }
 
-        const user = await prisma.user.findUnique({
+        // Try to find by username first, then by email
+        let user = await prisma.user.findUnique({
           where: { username: credentials.username },
           include: { branch: true }
         })
+        
+        // If not found by username, try email
+        if (!user) {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.username },
+            include: { branch: true }
+          })
+        }
 
         if (!user || !user.password) {
           throw new Error("username หรือรหัสผ่านไม่ถูกต้อง")
@@ -38,7 +47,7 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: user.id,
-          username: user.username,
+          username: user.username || user.email,
           email: user.email,
           role: user.role,
           employeeCode: user.employeeCode,
